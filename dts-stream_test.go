@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mus-format/mus-stream-dts-go/testdata"
+	"github.com/mus-format/dts-stream-go/testdata"
 	muss_mock "github.com/mus-format/mus-stream-go/testdata/mock"
 )
 

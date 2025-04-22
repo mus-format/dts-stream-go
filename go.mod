@@ -1,4 +1,4 @@
-module github.com/mus-format/mus-stream-dts-go
+module github.com/mus-format/dts-stream-go
 
 go 1.20
 
