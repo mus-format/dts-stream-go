@@ -1,4 +1,4 @@
-package dts
+package dtss
 
 import (
 	com "github.com/mus-format/common-go"
@@ -6,6 +6,8 @@ import (
 	"github.com/mus-format/mus-stream-go/varint"
 )
 
+// DTMSer serializes DTM values. It implements the muss.Serializer[com.DTM]
+// interface.
 var DTMSer = dtmSer{}
 
 type dtmSer struct{}

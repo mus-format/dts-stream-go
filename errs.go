@@ -1,4 +1,4 @@
-package dts
+package dtss
 
 import "errors"
 

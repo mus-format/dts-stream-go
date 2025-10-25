@@ -1,4 +1,4 @@
-package dts
+package dtss
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 )
 
 func TestDTS(t *testing.T) {
-
 	t.Run("Marshal, Unmarshal, Size, Skip methods should work correctly",
 		func(t *testing.T) {
 			var (
@@ -237,5 +236,4 @@ func TestDTS(t *testing.T) {
 				t.Errorf("unexpected n, want '%v' actual '%v'", 0, n)
 			}
 		})
-
 }
