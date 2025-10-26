@@ -1,14 +1,14 @@
-package dtss
+package dts
 
 import (
 	"bytes"
 	"errors"
-	"io"
-	"reflect"
 	"testing"
 
+	com "github.com/mus-format/common-go"
 	"github.com/mus-format/dts-stream-go/testdata"
-	muss_mock "github.com/mus-format/mus-stream-go/testdata/mock"
+	"github.com/mus-format/mus-stream-go/testdata/mock"
+	asserterror "github.com/ymz-ncnk/assert/error"
 )
 
 func TestDTS(t *testing.T) {
@@ -21,31 +21,20 @@ func TestDTS(t *testing.T) {
 				buf    = bytes.NewBuffer(make([]byte, 0, size))
 			)
 			n, err := fooDTS.Marshal(foo, buf)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if n != size {
-				t.Fatalf("unexpected n, want '%v' actual '%v'", size, n)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size, t)
+
 			afoo, n, err := fooDTS.Unmarshal(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if n != size {
-				t.Errorf("unexpected n, want '%v' actual '%v'", size, n)
-			}
-			if !reflect.DeepEqual(afoo, foo) {
-				t.Errorf("unexpected afoo, want '%v' actual '%v'", foo, afoo)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size, t)
+			asserterror.EqualDeep(afoo, foo, t)
+
 			buf.Reset()
+
 			fooDTS.Marshal(foo, buf)
 			n, err = fooDTS.Skip(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if n != size {
-				t.Errorf("unexpected n, want '%v' actual '%v'", size, n)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size, t)
 		})
 
 	t.Run("Marshal, UnmarshalDTM, UnmarshalData, Size, SkipDTM, SkipData methods should work correctly",
@@ -58,182 +47,153 @@ func TestDTS(t *testing.T) {
 				buf        = bytes.NewBuffer(make([]byte, 0, size))
 			)
 			n, err := fooDTS.Marshal(foo, buf)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if n != size {
-				t.Fatalf("unexpected n, want '%v' actual '%v'", size, n)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size, t)
+
 			dtm, n, err := DTMSer.Unmarshal(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if n != wantDTSize {
-				t.Errorf("unexpected n, want '%v' actual '%v'", 1, n)
-			}
-			if dtm != testdata.FooDTM {
-				t.Errorf("unexpected dtm, want '%v' actual '%v'", testdata.FooDTM, dtm)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, wantDTSize, t)
+			asserterror.Equal(dtm, testdata.FooDTM, t)
+
 			afoo, n, err := fooDTS.UnmarshalData(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if n != size-wantDTSize {
-				t.Errorf("unexpected n, want '%v' actual '%v'", size, n)
-			}
-			if !reflect.DeepEqual(afoo, foo) {
-				t.Errorf("unexpected afoo, want '%v' actual '%v'", foo, afoo)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size-wantDTSize, t)
+			asserterror.EqualDeep(afoo, foo, t)
+
 			buf.Reset()
+
 			fooDTS.Marshal(foo, buf)
 			_, err = DTMSer.Skip(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
+			asserterror.EqualError(err, nil, t)
+
 			n, err = fooDTS.SkipData(buf)
-			if err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if n != size-wantDTSize {
-				t.Errorf("unexpected n, want '%v' actual '%v'", size, n)
-			}
+			asserterror.EqualError(err, nil, t)
+			asserterror.Equal(n, size-wantDTSize, t)
 		})
 
 	t.Run("DTM method should return correct DTM", func(t *testing.T) {
 		var (
+			wantDTM = testdata.FooDTM
+
 			fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
-			dtm    = fooDTS.DTM()
 		)
-		if dtm != testdata.FooDTM {
-			t.Errorf("unexpected dtm, want '%v' actual '%v'", testdata.FooDTM, dtm)
-		}
+
+		dtm := fooDTS.DTM()
+		asserterror.Equal(dtm, wantDTM, t)
 	})
 
 	t.Run("Unamrshal should fail with ErrWrongDTM, if meets another DTM",
 		func(t *testing.T) {
 			var (
+				actualDTM = testdata.FooDTM + 3
+
 				wantDTSize = 1
-				r          = muss_mock.NewReader().RegisterReadByte(
+				wantErr    = com.NewWrongDTMError(testdata.FooDTM, actualDTM)
+				wantFoo    = testdata.Foo{}
+
+				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
-						b = byte(testdata.FooDTM) + 3
+						b = byte(actualDTM)
 						return
 					},
 				)
-				fooDTS      = New[testdata.Foo](testdata.FooDTM, nil)
-				foo, n, err = fooDTS.Unmarshal(r)
+				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
 			)
-			if err != ErrWrongDTM {
-				t.Errorf("unexpected error, want '%v' actual '%v'", ErrWrongDTM, err)
-			}
-			if !reflect.DeepEqual(foo, testdata.Foo{}) {
-				t.Errorf("unexpected foo, want '%v' actual '%v'", nil, foo)
-			}
-			if n != wantDTSize {
-				t.Errorf("unexpected n, want '%v' actual '%v'", wantDTSize, n)
-			}
+			foo, n, err := fooDTS.Unmarshal(r)
+			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualDeep(foo, wantFoo, t)
+			asserterror.Equal(n, wantDTSize, t)
 		})
 
 	t.Run("Skip should fail with ErrWrongDTM, if meets another DTM",
 		func(t *testing.T) {
 			var (
+				actualDTM = testdata.FooDTM + 3
+
 				wantDTSize = 1
-				r          = muss_mock.NewReader().RegisterReadByte(
+				wantErr    = com.NewWrongDTMError(testdata.FooDTM, actualDTM)
+
+				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
-						b = byte(testdata.FooDTM) + 3
+						b = byte(actualDTM)
 						return
 					},
 				)
 				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
-				n, err = fooDTS.Skip(r)
 			)
-			if err != ErrWrongDTM {
-				t.Errorf("unexpected error, want '%v' actual '%v'", ErrWrongDTM, err)
-			}
-			if n != wantDTSize {
-				t.Errorf("unexpected n, want '%v' actual '%v'", wantDTSize, n)
-			}
+
+			n, err := fooDTS.Skip(r)
+			asserterror.EqualError(err, wantErr, t)
+			asserterror.Equal(n, wantDTSize, t)
 		})
 
 	t.Run("If MarshalDTM fails with an error, Marshal should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = errors.New("write byte error")
-				w       = muss_mock.NewWriter().RegisterWriteByte(func(c byte) error {
+
+				w = mock.NewWriter().RegisterWriteByte(func(c byte) error {
 					return wantErr
 				})
 				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
 			)
 			_, err := fooDTS.Marshal(testdata.Foo{}, w)
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-			}
+			asserterror.EqualError(err, wantErr, t)
 		})
 
 	t.Run("If UnmarshalDTM fails with an error, Unmarshal should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = errors.New("read byte error")
-				r       = muss_mock.NewReader().RegisterReadByte(
-					func() (b byte, err error) {
-						err = wantErr
-						return
-					},
-				)
-				fooDTS      = New[testdata.Foo](testdata.FooDTM, nil)
-				foo, n, err = fooDTS.Unmarshal(r)
-			)
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", io.EOF, err)
-			}
-			if !reflect.DeepEqual(foo, testdata.Foo{}) {
-				t.Errorf("unexpected foo, want '%v' actual '%v'", nil, foo)
-			}
-			if n != 0 {
-				t.Errorf("unexpected n, want '%v' actual '%v'", 0, n)
-			}
-		})
 
-	t.Run("If UnmarshalDTM fails with an error, Skip should return it",
-		func(t *testing.T) {
-			var (
-				wantErr = errors.New("read byte error")
-				r       = muss_mock.NewReader().RegisterReadByte(
+				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
 						err = wantErr
 						return
 					},
 				)
 				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
-				n, err = fooDTS.Skip(r)
 			)
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", io.EOF, err)
-			}
-			if n != 0 {
-				t.Errorf("unexpected n, want '%v' actual '%v'", 0, n)
-			}
+			foo, n, err := fooDTS.Unmarshal(r)
+			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualDeep(foo, testdata.Foo{}, t)
+			asserterror.Equal(n, 0, t)
+		})
+
+	t.Run("If UnmarshalDTM fails with an error, Skip should return it",
+		func(t *testing.T) {
+			var (
+				wantErr = errors.New("read byte error")
+
+				r = mock.NewReader().RegisterReadByte(
+					func() (b byte, err error) {
+						err = wantErr
+						return
+					},
+				)
+				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+			)
+
+			n, err := fooDTS.Skip(r)
+			asserterror.EqualError(err, wantErr, t)
+			asserterror.Equal(n, 0, t)
 		})
 
 	t.Run("If varint.UnmarshalInt fails with an error, UnmarshalDTM should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = errors.New("read byte error")
-				r       = muss_mock.NewReader().RegisterReadByte(
+
+				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
 						err = wantErr
 						return
 					},
 				)
-				dtm, n, err = DTMSer.Unmarshal(r)
 			)
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", io.EOF, err)
-			}
-			if dtm != 0 {
-				t.Errorf("unexpected dtm, want '%v' actual '%v'", 0, dtm)
-			}
-			if n != 0 {
-				t.Errorf("unexpected n, want '%v' actual '%v'", 0, n)
-			}
+			dtm, n, err := DTMSer.Unmarshal(r)
+			asserterror.EqualError(err, wantErr, t)
+			asserterror.Equal(dtm, com.DTM(0), t)
+			asserterror.Equal(n, 0, t)
 		})
 }

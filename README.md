@@ -14,4 +14,3 @@ instead of byte slices.
 ## How To
 
 For usage details and examples, see the [dts-go documentation](https://github.com/mus-format/dts-go).
-

@@ -1,15 +1,15 @@
-// Package dtss provides DTM (Deterministic Type Marker) support for
-// mus-stream-go serializer. It wraps a mus-stream-go serializer together with
-// a DTM value, enabling serialization of data with an embedded type marker.
-package dtss
+// Package dts provides DTM (Data Type Metadata) support for mus-stream-go
+// serializer. It wraps a type serializer together with a DTM value,
+// enabling typed data serialization.
+package dts
 
 import (
 	com "github.com/mus-format/common-go"
-	muss "github.com/mus-format/mus-stream-go"
+	"github.com/mus-format/mus-stream-go"
 )
 
 // New creates a new DTS.
-func New[T any](dtm com.DTM, ser muss.Serializer[T],
+func New[T any](dtm com.DTM, ser mus.Serializer[T],
 ) DTS[T] {
 	return DTS[T]{dtm, ser}
 }
@@ -18,7 +18,7 @@ func New[T any](dtm com.DTM, ser muss.Serializer[T],
 // mus-stream-go serializer. It helps to serializer DTM + data.
 type DTS[T any] struct {
 	dtm com.DTM
-	ser muss.Serializer[T]
+	ser mus.Serializer[T]
 }
 
 // DTM returns the initialization value.
@@ -27,7 +27,7 @@ func (d DTS[T]) DTM() com.DTM {
 }
 
 // Marshal marshals DTM + data.
-func (d DTS[T]) Marshal(t T, w muss.Writer) (n int, err error) {
+func (d DTS[T]) Marshal(t T, w mus.Writer) (n int, err error) {
 	n, err = DTMSer.Marshal(d.dtm, w)
 	if err != nil {
 		return
@@ -41,13 +41,13 @@ func (d DTS[T]) Marshal(t T, w muss.Writer) (n int, err error) {
 // Unmarshal unmarshals DTM + data.
 //
 // Returns ErrWrongDTM if the unmarshalled DTM differs from the dts.DTM().
-func (d DTS[T]) Unmarshal(r muss.Reader) (t T, n int, err error) {
+func (d DTS[T]) Unmarshal(r mus.Reader) (t T, n int, err error) {
 	dtm, n, err := DTMSer.Unmarshal(r)
 	if err != nil {
 		return
 	}
 	if dtm != d.dtm {
-		err = ErrWrongDTM
+		err = com.NewWrongDTMError(d.dtm, dtm)
 		return
 	}
 	var n1 int
@@ -65,13 +65,13 @@ func (d DTS[T]) Size(t T) (size int) {
 // Skip skips DTM + data.
 //
 // Returns ErrWrongDTM if the unmarshalled DTM differs from the dts.DTM().
-func (d DTS[T]) Skip(r muss.Reader) (n int, err error) {
+func (d DTS[T]) Skip(r mus.Reader) (n int, err error) {
 	dtm, n, err := DTMSer.Unmarshal(r)
 	if err != nil {
 		return
 	}
 	if dtm != d.dtm {
-		err = ErrWrongDTM
+		err = com.NewWrongDTMError(d.dtm, dtm)
 		return
 	}
 	n1, err := d.SkipData(r)
@@ -80,11 +80,11 @@ func (d DTS[T]) Skip(r muss.Reader) (n int, err error) {
 }
 
 // UnmarshalData unmarshals only data.
-func (d DTS[T]) UnmarshalData(r muss.Reader) (t T, n int, err error) {
+func (d DTS[T]) UnmarshalData(r mus.Reader) (t T, n int, err error) {
 	return d.ser.Unmarshal(r)
 }
 
 // SkipData skips only data.
-func (d DTS[T]) SkipData(r muss.Reader) (n int, err error) {
+func (d DTS[T]) SkipData(r mus.Reader) (n int, err error) {
 	return d.ser.Skip(r)
 }

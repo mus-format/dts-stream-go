@@ -2,7 +2,7 @@ package testdata
 
 import (
 	com "github.com/mus-format/common-go"
-	muss "github.com/mus-format/mus-stream-go"
+	"github.com/mus-format/mus-stream-go"
 	"github.com/mus-format/mus-stream-go/ord"
 	"github.com/mus-format/mus-stream-go/varint"
 )
@@ -18,7 +18,7 @@ var FooSer = fooSer{}
 
 type fooSer struct{}
 
-func (s fooSer) Marshal(foo Foo, w muss.Writer) (n int, err error) {
+func (s fooSer) Marshal(foo Foo, w mus.Writer) (n int, err error) {
 	n, err = varint.Int.Marshal(foo.Num, w)
 	if err != nil {
 		return
@@ -29,7 +29,7 @@ func (s fooSer) Marshal(foo Foo, w muss.Writer) (n int, err error) {
 	return
 }
 
-func (s fooSer) Unmarshal(r muss.Reader) (foo Foo, n int, err error) {
+func (s fooSer) Unmarshal(r mus.Reader) (foo Foo, n int, err error) {
 	foo.Num, n, err = varint.Int.Unmarshal(r)
 	if err != nil {
 		return
@@ -45,7 +45,7 @@ func (s fooSer) Size(foo Foo) (size int) {
 	return size + ord.String.Size(foo.Str)
 }
 
-func (s fooSer) Skip(r muss.Reader) (n int, err error) {
+func (s fooSer) Skip(r mus.Reader) (n int, err error) {
 	n, err = varint.Int.Skip(r)
 	if err != nil {
 		return
