@@ -6,90 +6,90 @@ import (
 	"testing"
 
 	com "github.com/mus-format/common-go"
-	"github.com/mus-format/dts-stream-go/testdata"
-	"github.com/mus-format/mus-stream-go/testdata/mock"
+	"github.com/mus-format/dts-stream-go/testutil"
+	"github.com/mus-format/mus-stream-go/testutil/mock"
 	asserterror "github.com/ymz-ncnk/assert/error"
 )
 
 func TestDTS(t *testing.T) {
-	t.Run("Marshal, Unmarshal, Size, Skip methods should work correctly",
+	t.Run("Marshal, Unmarshal, Size, Skip methods should work succeed",
 		func(t *testing.T) {
 			var (
-				foo    = testdata.Foo{Num: 11, Str: "hello world"}
-				fooDTS = New[testdata.Foo](testdata.FooDTM, testdata.FooSer)
+				foo    = testutil.Foo{Num: 11, Str: "hello world"}
+				fooDTS = New[testutil.Foo](testutil.FooDTM, testutil.FooSer)
 				size   = fooDTS.Size(foo)
 				buf    = bytes.NewBuffer(make([]byte, 0, size))
 			)
 			n, err := fooDTS.Marshal(foo, buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size)
 
 			afoo, n, err := fooDTS.Unmarshal(buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size, t)
-			asserterror.EqualDeep(afoo, foo, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size)
+			asserterror.EqualDeep(t, afoo, foo)
 
 			buf.Reset()
 
 			fooDTS.Marshal(foo, buf)
 			n, err = fooDTS.Skip(buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size)
 		})
 
-	t.Run("Marshal, UnmarshalDTM, UnmarshalData, Size, SkipDTM, SkipData methods should work correctly",
+	t.Run("Marshal, UnmarshalDTM, UnmarshalData, Size, SkipDTM, SkipData methods should succeed",
 		func(t *testing.T) {
 			var (
 				wantDTSize = 1
-				foo        = testdata.Foo{Num: 11, Str: "hello world"}
-				fooDTS     = New[testdata.Foo](testdata.FooDTM, testdata.FooSer)
+				foo        = testutil.Foo{Num: 11, Str: "hello world"}
+				fooDTS     = New[testutil.Foo](testutil.FooDTM, testutil.FooSer)
 				size       = fooDTS.Size(foo)
 				buf        = bytes.NewBuffer(make([]byte, 0, size))
 			)
 			n, err := fooDTS.Marshal(foo, buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size)
 
 			dtm, n, err := DTMSer.Unmarshal(buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, wantDTSize, t)
-			asserterror.Equal(dtm, testdata.FooDTM, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, wantDTSize)
+			asserterror.Equal(t, dtm, testutil.FooDTM)
 
 			afoo, n, err := fooDTS.UnmarshalData(buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size-wantDTSize, t)
-			asserterror.EqualDeep(afoo, foo, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size-wantDTSize)
+			asserterror.EqualDeep(t, afoo, foo)
 
 			buf.Reset()
 
 			fooDTS.Marshal(foo, buf)
 			_, err = DTMSer.Skip(buf)
-			asserterror.EqualError(err, nil, t)
+			asserterror.EqualError(t, err, nil)
 
 			n, err = fooDTS.SkipData(buf)
-			asserterror.EqualError(err, nil, t)
-			asserterror.Equal(n, size-wantDTSize, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.Equal(t, n, size-wantDTSize)
 		})
 
 	t.Run("DTM method should return correct DTM", func(t *testing.T) {
 		var (
-			wantDTM = testdata.FooDTM
+			wantDTM = testutil.FooDTM
 
-			fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+			fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 		)
 
 		dtm := fooDTS.DTM()
-		asserterror.Equal(dtm, wantDTM, t)
+		asserterror.Equal(t, dtm, wantDTM)
 	})
 
 	t.Run("Unamrshal should fail with ErrWrongDTM, if meets another DTM",
 		func(t *testing.T) {
 			var (
-				actualDTM = testdata.FooDTM + 3
+				actualDTM = testutil.FooDTM + 3
 
 				wantDTSize = 1
-				wantErr    = com.NewWrongDTMError(testdata.FooDTM, actualDTM)
-				wantFoo    = testdata.Foo{}
+				wantErr    = com.NewWrongDTMError(testutil.FooDTM, actualDTM)
+				wantFoo    = testutil.Foo{}
 
 				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
@@ -97,21 +97,21 @@ func TestDTS(t *testing.T) {
 						return
 					},
 				)
-				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+				fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 			)
 			foo, n, err := fooDTS.Unmarshal(r)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(foo, wantFoo, t)
-			asserterror.Equal(n, wantDTSize, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, foo, wantFoo)
+			asserterror.Equal(t, n, wantDTSize)
 		})
 
 	t.Run("Skip should fail with ErrWrongDTM, if meets another DTM",
 		func(t *testing.T) {
 			var (
-				actualDTM = testdata.FooDTM + 3
+				actualDTM = testutil.FooDTM + 3
 
 				wantDTSize = 1
-				wantErr    = com.NewWrongDTMError(testdata.FooDTM, actualDTM)
+				wantErr    = com.NewWrongDTMError(testutil.FooDTM, actualDTM)
 
 				r = mock.NewReader().RegisterReadByte(
 					func() (b byte, err error) {
@@ -119,12 +119,12 @@ func TestDTS(t *testing.T) {
 						return
 					},
 				)
-				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+				fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 			)
 
 			n, err := fooDTS.Skip(r)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.Equal(n, wantDTSize, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.Equal(t, n, wantDTSize)
 		})
 
 	t.Run("If MarshalDTM fails with an error, Marshal should return it",
@@ -135,10 +135,10 @@ func TestDTS(t *testing.T) {
 				w = mock.NewWriter().RegisterWriteByte(func(c byte) error {
 					return wantErr
 				})
-				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+				fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 			)
-			_, err := fooDTS.Marshal(testdata.Foo{}, w)
-			asserterror.EqualError(err, wantErr, t)
+			_, err := fooDTS.Marshal(testutil.Foo{}, w)
+			asserterror.EqualError(t, err, wantErr)
 		})
 
 	t.Run("If UnmarshalDTM fails with an error, Unmarshal should return it",
@@ -152,12 +152,12 @@ func TestDTS(t *testing.T) {
 						return
 					},
 				)
-				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+				fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 			)
 			foo, n, err := fooDTS.Unmarshal(r)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(foo, testdata.Foo{}, t)
-			asserterror.Equal(n, 0, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, foo, testutil.Foo{})
+			asserterror.Equal(t, n, 0)
 		})
 
 	t.Run("If UnmarshalDTM fails with an error, Skip should return it",
@@ -171,12 +171,12 @@ func TestDTS(t *testing.T) {
 						return
 					},
 				)
-				fooDTS = New[testdata.Foo](testdata.FooDTM, nil)
+				fooDTS = New[testutil.Foo](testutil.FooDTM, nil)
 			)
 
 			n, err := fooDTS.Skip(r)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.Equal(n, 0, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.Equal(t, n, 0)
 		})
 
 	t.Run("If varint.UnmarshalInt fails with an error, UnmarshalDTM should return it",
@@ -192,8 +192,8 @@ func TestDTS(t *testing.T) {
 				)
 			)
 			dtm, n, err := DTMSer.Unmarshal(r)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.Equal(dtm, com.DTM(0), t)
-			asserterror.Equal(n, 0, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.Equal(t, dtm, com.DTM(0))
+			asserterror.Equal(t, n, 0)
 		})
 }
