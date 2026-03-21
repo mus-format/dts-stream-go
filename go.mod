@@ -1,3 +1,4 @@
+// Deprecated: use github.com/mus-format/mus-stream-go instead.
 module github.com/mus-format/dts-stream-go
 
 go 1.20

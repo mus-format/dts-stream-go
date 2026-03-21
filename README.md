@@ -1,5 +1,9 @@
 # dts-stream-go
 
+> [!WARNING]
+> This repository is **deprecated**. Its functionality has been merged into the
+> [mus-stream-go](https://github.com/mus-format/mus-stream-go) module. Please use [mus-stream-go](https://github.com/mus-format/mus-stream-go) instead.
+
 [![Go Reference](https://pkg.go.dev/badge/github.com/mus-format/dts-stream-go.svg)](https://pkg.go.dev/github.com/mus-format/dts-stream-go)
 [![GoReportCard](https://goreportcard.com/badge/mus-format/dts-stream-go)](https://goreportcard.com/report/github.com/mus-format/dts-stream-go)
 [![codecov](https://codecov.io/gh/mus-format/dts-stream-go/graph/badge.svg?token=LDDAIPEWBI)](https://codecov.io/gh/mus-format/dts-stream-go)
